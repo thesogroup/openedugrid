@@ -1,0 +1,15 @@
+{
+  "name": "openedugrid",
+  "version": "1.0.0",
+  "description": "Resilient, Offline-First Peer-to-Peer Campus Infrastructure by THE S.O. GROUP",
+  "main": "server/edge-node.js",
+  "scripts": {
+    "start": "node server/edge-node.js",
+    "dev": "node --watch server/edge-node.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "author": "Onovroke Goodnews Ovie",
+  "license": "MIT"
+}

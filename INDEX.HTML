@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenEduGrid Studio | THE S.O. GROUP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased">
+  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <div>
+        <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
+          OPENEDUGRID <span class="text-xs px-2 py-0.5 bg-cyan-950 text-cyan-300 border border-cyan-800 rounded-full">THE S.O. GROUP</span>
+        </h1>
+        <p class="text-xs text-slate-400">Decentralized P2P Campus Micro-Infrastructure Engine</p>
+      </div>
+      <div id="network-badge" class="px-3 py-1 text-xs font-medium rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ONLINE (Cloud Linked)
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Controls Panel -->
+    <div class="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 space-y-6">
+      <h2 class="text-lg font-semibold text-cyan-400 border-b border-slate-800 pb-3">Node Simulation Controls</h2>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Simulate Course Assignment</label>
+          <input type="text" id="course-input" value="CSC 101: Intro to IT Architectures" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
+        </div>
+        <button id="submit-offline-btn" class="w-full bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-semibold py-2.5 rounded-lg text-sm transition">
+          Queue Offline Submission (SHA-256)
+        </button>
+      </div>
+
+      <div class="pt-4 border-t border-slate-800">
+        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Mesh Network Actions</h3>
+        <button id="trigger-sync-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium py-2 rounded-lg text-sm border border-slate-700 transition">
+          Flush Queue to Edge Node
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Telemetry / Console Log -->
+    <div class="md:col-span-2 bg-slate-900/40 border border-slate-800 rounded-2xl p-6 flex flex-col">
+      <h2 class="text-lg font-semibold text-teal-400 border-b border-slate-800 pb-3 mb-4">Live System Telemetry & Console Log</h2>
+      <div id="console-output" class="flex-1 bg-slate-950 border border-slate-900 rounded-xl p-4 font-mono text-xs text-emerald-400 overflow-y-auto h-80 space-y-2">
+        <p>[System] OpenEduGrid engine client initialized successfully.</p>
+        <p>[Storage] IndexedDB connected. Offline queue listener active.</p>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { OpenedugridStorage } from './src/storage/OpenedugridStorage.js';
+
+    const consoleBox = document.getElementById('console-output');
+    const netBadge = document.getElementById('network-badge');
+
+    function log(msg, type = 'info') {
+      const p = document.createElement('p');
+      p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      if(type === 'success') p.className = 'text-cyan-300';
+      if(type === 'error') p.className = 'text-rose-400';
+      consoleBox.appendChild(p);
+      consoleBox.scrollTop = consoleBox.scrollHeight;
+    }
+
+    const storage = new OpenedugridStorage();
+    storage.init().then(() => log('IndexedDB storage engine ready for offline queuing.', 'success'));
+
+    window.addEventListener('online', () => {
+      netBadge.className = 'px-3 py-1 text-xs font-medium rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center gap-2';
+      netBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ONLINE (Cloud Linked)';
+      log('Network status: ONLINE. Flushing pending queues...');
+    });
+
+    window.addEventListener('offline', () => {
+      netBadge.className = 'px-3 py-1 text-xs font-medium rounded-full bg-amber-950 text-amber-400 border border-amber-800 flex items-center gap-2';
+      netBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> OFFLINE (Mesh & IndexedDB Active)';
+      log('Network status: OFFLINE. Switched to secure local storage queue.', 'error');
+    });
+
+    document.getElementById('submit-offline-btn').addEventListener('click', async () => {
+      const course = document.getElementById('course-input').value;
+      try {
+        const entryId = await storage.queueAction('SUBMIT_ASSIGNMENT', { course, student: 'Ovie_Emmanuel' });
+        log(`Assignment queued securely! Local Queue ID: #${entryId}`, 'success');
+      } catch (err) {
+        log(`Queue error: ${err.message}`, 'error');
+      }
+    });
+
+    document.getElementById('trigger-sync-btn').addEventListener('click', async () => {
+      log('Manually initiating queue synchronization sweep...');
+      await storage.processQueue();
+      log('Sync sweep complete.');
+    });
+  </script>
+</body>
+</html>
