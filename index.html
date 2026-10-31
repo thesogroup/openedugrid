@@ -31,6 +31,9 @@
       <button id="tab-lecturer" class="py-2 px-4 font-semibold text-sm text-slate-400 hover:text-slate-200 focus:outline-none">
         Lecturer Ledger Dashboard
       </button>
+      <button id="tab-hostel" class="py-2 px-4 font-semibold text-sm text-slate-400 hover:text-slate-200 focus:outline-none">
+        Hostel Auto-Booking Bot
+      </button>
     </div>
 
     <!-- Student Portal View -->
@@ -96,32 +99,92 @@
         </table>
       </div>
     </section>
+
+    <!-- Hostel Auto-Booking Portal View (Hidden by Default) -->
+    <section id="view-hostel" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 space-y-4">
+        <h2 class="text-lg font-semibold text-amber-400 border-b border-slate-800 pb-2">Hostel Rush Pre-Queue</h2>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Matric Number</label>
+          <input type="text" id="hostel-matric" value="DOU/2026/IFT/001" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Portal Password</label>
+          <input type="password" id="hostel-pass" value="********" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Preferred Hostel</label>
+          <select id="hostel-choice" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200">
+            <option>Hostel A (Standard Male/Female)</option>
+            <option>Hostel B (Executive Block)</option>
+            <option>Campus Annex Wing C</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Scheduled Opening Time</label>
+          <input type="datetime-local" id="hostel-time" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200">
+        </div>
+        <button id="save-hostel-bot-btn" class="w-full bg-amber-600 hover:bg-amber-500 text-slate-950 font-semibold py-2.5 rounded-lg text-sm transition">
+          Arm Auto-Booking Bot (Sleep Mode)
+        </button>
+      </div>
+
+      <div class="md:col-span-2 bg-slate-900/40 border border-slate-800 rounded-2xl p-6">
+        <h2 class="text-lg font-semibold text-amber-300 border-b border-slate-800 pb-2 mb-4">Bot Execution Console</h2>
+        <div id="hostel-console" class="bg-slate-950 border border-slate-900 rounded-xl p-4 font-mono text-xs text-amber-400 overflow-y-auto h-80 space-y-2">
+          <p>[Bot System] Hostel Auto-Booking module standing by. Configure your preferences and arm the bot before sleeping.</p>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script type="module">
     import { OpenedugridStorage } from './src/storage/OpenedugridStorage.js';
+    import { HostelAutoQueue } from './src/modules/hostel-bot.js';
 
     const storage = new OpenedugridStorage();
     storage.init();
 
-    // Tab switching logic
+    const hostelBot = new HostelAutoQueue(storage);
+
+    // Tab switching elements
     const tabStudent = document.getElementById('tab-student');
     const tabLecturer = document.getElementById('tab-lecturer');
+    const tabHostel = document.getElementById('tab-hostel');
+
     const viewStudent = document.getElementById('view-student');
     const viewLecturer = document.getElementById('view-lecturer');
+    const viewHostel = document.getElementById('view-hostel');
 
+    // Tab Switching Logic
     tabStudent.addEventListener('click', () => {
       viewStudent.classList.remove('hidden');
       viewLecturer.classList.add('hidden');
+      viewHostel.classList.add('hidden');
+
       tabStudent.className = 'py-2 px-4 font-semibold text-sm border-b-2 border-cyan-400 text-cyan-400 focus:outline-none';
       tabLecturer.className = 'py-2 px-4 font-semibold text-sm text-slate-400 hover:text-slate-200 focus:outline-none';
+      tabHostel.className = 'py-2 px-4 font-semibold text-sm text-slate-400 hover:text-slate-200 focus:outline-none';
     });
 
     tabLecturer.addEventListener('click', () => {
       viewLecturer.classList.remove('hidden');
       viewStudent.classList.add('hidden');
+      viewHostel.classList.add('hidden');
+
       tabLecturer.className = 'py-2 px-4 font-semibold text-sm border-b-2 border-cyan-400 text-cyan-400 focus:outline-none';
       tabStudent.className = 'py-2 px-4 font-semibold text-sm text-slate-400 hover:text-slate-200 focus:outline-none';
+      tabHostel.className = 'py-2 px-4 font-semibold text-sm text-slate-400 hover:text-slate-200 focus:outline-none';
+    });
+
+    tabHostel.addEventListener('click', () => {
+      viewHostel.classList.remove('hidden');
+      viewStudent.classList.add('hidden');
+      viewLecturer.classList.add('hidden');
+
+      tabHostel.className = 'py-2 px-4 font-semibold text-sm border-b-2 border-amber-400 text-amber-400 focus:outline-none';
+      tabStudent.className = 'py-2 px-4 font-semibold text-sm text-slate-400 hover:text-slate-200 focus:outline-none';
+      tabLecturer.className = 'py-2 px-4 font-semibold text-sm text-slate-400 hover:text-slate-200 focus:outline-none';
     });
 
     // Student Actions
@@ -170,6 +233,34 @@
       } catch (err) {
         alert('Make sure your edge server (node server/edge-node.js) is running on port 4000!');
       }
+    });
+
+    // Hostel Bot Arming Action
+    document.getElementById('save-hostel-bot-btn').addEventListener('click', () => {
+      const matric = document.getElementById('hostel-matric').value;
+      const pass = document.getElementById('hostel-pass').value;
+      const choice = document.getElementById('hostel-choice').value;
+      const time = document.getElementById('hostel-time').value;
+
+      if (!time) {
+        alert('Please set the official portal opening time!');
+        return;
+      }
+
+      hostelBot.savePreferences(matric, pass, choice, 'Standard', time);
+
+      const consoleBox = document.getElementById('hostel-console');
+      const p = document.createElement('p');
+      p.className = 'text-amber-300';
+      p.textContent = `[Armed] Bot locked and loaded for ${choice}. You can go to sleep; it will auto-apply at ${time}.`;
+      consoleBox.appendChild(p);
+
+      hostelBot.initiateCountdown((statusMsg) => {
+        const msgP = document.createElement('p');
+        msgP.textContent = statusMsg;
+        consoleBox.appendChild(msgP);
+        consoleBox.scrollTop = consoleBox.scrollHeight;
+      });
     });
   </script>
 </body>
